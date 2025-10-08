@@ -1,0 +1,219 @@
+-- Dead Rails Aimbot (fast smooth + rainbow aim circle toggle)
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+
+local aimRadius = 150
+local aiming = false
+local leadFactor = 0.12            -- prediction nhẹ
+local smoothAmount = 0.6           -- mặc định nhanh hơn (0..1, lớn = nhanh)
+local smoothStep = 0.05            -- bước tăng/giảm smoothing
+local rainbowEnabled = false
+local rainbowSpeed = 0.8           -- tốc độ đổi màu
+
+-- GUI
+local gui = Instance.new("ScreenGui", game.CoreGui)
+gui.Name = "AimbotGui"
+
+local main = Instance.new("Frame", gui)
+main.Size = UDim2.new(0, 240, 0, 190)
+main.Position = UDim2.new(0.02, 0, 0.35, 0)
+main.BackgroundColor3 = Color3.fromRGB(30, 30, 80)
+main.BorderSizePixel = 0
+main.Active = true
+main.Draggable = true
+Instance.new("UICorner", main).CornerRadius = UDim.new(0, 12)
+
+local title = Instance.new("TextLabel", main)
+title.Size = UDim2.new(1, 0, 0, 30)
+title.Position = UDim2.new(0,0,0,0)
+title.Text = "Aimbot Script"
+title.BackgroundTransparency = 1
+title.TextColor3 = Color3.new(1, 1, 1)
+title.Font = Enum.Font.GothamBold
+title.TextSize = 18
+
+local toggle = Instance.new("TextButton", main)
+toggle.Size = UDim2.new(0.8, 0, 0, 30)
+toggle.Position = UDim2.new(0.1, 0, 0.18, 0)
+toggle.Text = "Aimbot: OFF"
+toggle.BackgroundColor3 = Color3.fromRGB(100, 100, 220)
+toggle.TextColor3 = Color3.new(1, 1, 1)
+toggle.Font = Enum.Font.GothamBold
+toggle.TextSize = 16
+Instance.new("UICorner", toggle)
+
+local rainbowToggle = Instance.new("TextButton", main)
+rainbowToggle.Size = UDim2.new(0.8, 0, 0, 28)
+rainbowToggle.Position = UDim2.new(0.1, 0, 0.36, 0)
+rainbowToggle.Text = "Rainbow: OFF"
+rainbowToggle.BackgroundColor3 = Color3.fromRGB(120,120,120)
+rainbowToggle.Font = Enum.Font.GothamBold
+rainbowToggle.TextSize = 14
+rainbowToggle.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", rainbowToggle)
+
+local speedLabel = Instance.new("TextLabel", main)
+speedLabel.Size = UDim2.new(0.6, 0, 0, 26)
+speedLabel.Position = UDim2.new(0.2, 0, 0.56, 0)
+speedLabel.BackgroundTransparency = 1
+speedLabel.Text = "Smooth: "..math.floor(smoothAmount*100).."%"
+speedLabel.TextColor3 = Color3.new(1,1,1)
+speedLabel.Font = Enum.Font.Gotham
+speedLabel.TextSize = 14
+
+local speedMinus = Instance.new("TextButton", main)
+speedMinus.Size = UDim2.new(0.2, -5, 0, 28)
+speedMinus.Position = UDim2.new(0.02, 0, 0.56, 0)
+speedMinus.Text = "-"
+speedMinus.Font = Enum.Font.GothamBold
+speedMinus.TextSize = 20
+Instance.new("UICorner", speedMinus)
+
+local speedPlus = Instance.new("TextButton", main)
+speedPlus.Size = UDim2.new(0.2, -5, 0, 28)
+speedPlus.Position = UDim2.new(0.78, 0, 0.56, 0)
+speedPlus.Text = "+"
+speedPlus.Font = Enum.Font.GothamBold
+speedPlus.TextSize = 20
+Instance.new("UICorner", speedPlus)
+
+local minus = Instance.new("TextButton", main)
+minus.Size = UDim2.new(0.3, -5, 0, 30)
+minus.Position = UDim2.new(0.05, 0, 0.78, 0)
+minus.Text = "-"
+minus.BackgroundColor3 = Color3.fromRGB(120, 120, 120)
+minus.TextColor3 = Color3.new(1, 1, 1)
+minus.Font = Enum.Font.GothamBold
+minus.TextSize = 20
+Instance.new("UICorner", minus)
+
+local plus = Instance.new("TextButton", main)
+plus.Size = UDim2.new(0.3, -5, 0, 30)
+plus.Position = UDim2.new(0.65, 0, 0.78, 0)
+plus.Text = "+"
+plus.BackgroundColor3 = Color3.fromRGB(120, 120, 120)
+plus.TextColor3 = Color3.new(1, 1, 1)
+plus.Font = Enum.Font.GothamBold
+plus.TextSize = 20
+Instance.new("UICorner", plus)
+
+-- Toggle events
+toggle.MouseButton1Click:Connect(function()
+	aiming = not aiming
+	toggle.Text = aiming and "Aimbot: ON" or "Aimbot: OFF"
+	toggle.BackgroundColor3 = aiming and Color3.fromRGB(40, 200, 100) or Color3.fromRGB(100, 100, 220)
+end)
+
+rainbowToggle.MouseButton1Click:Connect(function()
+	rainbowEnabled = not rainbowEnabled
+	rainbowToggle.Text = rainbowEnabled and "Rainbow: ON" or "Rainbow: OFF"
+	rainbowToggle.BackgroundColor3 = rainbowEnabled and Color3.fromRGB(200,100,200) or Color3.fromRGB(120,120,120)
+end)
+
+speedPlus.MouseButton1Click:Connect(function()
+	smoothAmount = math.clamp(smoothAmount + smoothStep, 0, 1)
+	speedLabel.Text = "Smooth: "..math.floor(smoothAmount*100).."%"
+end)
+
+speedMinus.MouseButton1Click:Connect(function()
+	smoothAmount = math.clamp(smoothAmount - smoothStep, 0, 1)
+	speedLabel.Text = "Smooth: "..math.floor(smoothAmount*100).."%"
+end)
+
+plus.MouseButton1Click:Connect(function()
+	aimRadius = aimRadius + 25
+end)
+
+minus.MouseButton1Click:Connect(function()
+	aimRadius = math.max(25, aimRadius - 25)
+end)
+
+-- Drawing circle
+local success, Drawing = pcall(function() return Drawing end)
+local aimCircle
+if success and Drawing then
+	aimCircle = Drawing.new("Circle")
+	aimCircle.Thickness = 2
+	aimCircle.Transparency = 0.8
+	aimCircle.Filled = false
+	aimCircle.Radius = aimRadius
+	aimCircle.Position = Vector2.new(0,0)
+	aimCircle.Visible = false
+	aimCircle.Color = Color3.fromRGB(255,0,0)
+end
+
+-- Valid target
+local function isValidTarget(player)
+	if not player or not player.Character then return false end
+	if player == LocalPlayer then return false end
+	if LocalPlayer.Team and player.Team and LocalPlayer.Team == player.Team then return false end
+	local humanoid = player.Character:FindFirstChildWhichIsA("Humanoid")
+	if not humanoid then return false end
+	if humanoid.Health <= 0 then return false end
+	if humanoid:GetState() == Enum.HumanoidStateType.Dead then return false end
+	if not player.Character.Parent then return false end
+	return true
+end
+
+local function getClosestTarget()
+	local closest = nil
+	local shortest = aimRadius
+	local center = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)
+	for _, player in pairs(Players:GetPlayers()) do
+		if isValidTarget(player) then
+			local part = player.Character:FindFirstChild("Head") or player.Character:FindFirstChild("HumanoidRootPart")
+			if part then
+				local pos, onScreen = Camera:WorldToViewportPoint(part.Position)
+				if onScreen then
+					local screenPos = Vector2.new(pos.X, pos.Y)
+					local dist = (screenPos - center).Magnitude
+					if dist <= shortest then
+						shortest = dist
+						closest = player
+					end
+				end
+			end
+		end
+	end
+	return closest
+end
+
+local hue = 0
+RunService.RenderStepped:Connect(function(delta)
+	-- update circle
+	if aimCircle then
+		local center = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)
+		aimCircle.Position = center
+		aimCircle.Radius = aimRadius
+		aimCircle.Visible = aiming
+		if rainbowEnabled then
+			hue = (hue + rainbowSpeed * delta) % 1
+			aimCircle.Color = Color3.fromHSV(hue, 1, 1)
+		else
+			aimCircle.Color = Color3.fromRGB(255,0,0)
+		end
+	end
+
+	if aiming then
+		local target = getClosestTarget()
+		if target and target.Character then
+			local aimPart = target.Character:FindFirstChild("Head") or target.Character:FindFirstChild("HumanoidRootPart")
+			if aimPart then
+				local toTarget = aimPart.Position - Camera.CFrame.Position
+				local distance = toTarget.Magnitude
+				local predicted = aimPart.Position
+				local root = target.Character:FindFirstChild("HumanoidRootPart")
+				if root and root.Velocity then
+					local timeEstimate = distance / 1000
+					predicted = predicted + root.Velocity * timeEstimate * leadFactor
+				end
+
+				local desired = CFrame.new(Camera.CFrame.Position, predicted)
+				-- faster smoothing by using smoothAmount nearer to 1
+				Camera.CFrame = Camera.CFrame:Lerp(desired, math.clamp(smoothAmount, 0, 1))
+			end
+		end
+	end
+end)
