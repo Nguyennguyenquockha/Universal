@@ -1,4 +1,3 @@
--- Dead Rails Aimbot (fast smooth + rainbow aim circle toggle)
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
@@ -6,13 +5,12 @@ local Camera = workspace.CurrentCamera
 
 local aimRadius = 150
 local aiming = false
-local leadFactor = 0.12            -- prediction nhẹ
-local smoothAmount = 0.6           -- mặc định nhanh hơn (0..1, lớn = nhanh)
-local smoothStep = 0.05            -- bước tăng/giảm smoothing
+local leadFactor = 0.12
+local smoothAmount = 0.6
+local smoothStep = 0.05
 local rainbowEnabled = false
-local rainbowSpeed = 0.8           -- tốc độ đổi màu
+local rainbowSpeed = 0.7
 
--- GUI
 local gui = Instance.new("ScreenGui", game.CoreGui)
 gui.Name = "AimbotGui"
 
@@ -130,7 +128,6 @@ minus.MouseButton1Click:Connect(function()
 	aimRadius = math.max(25, aimRadius - 25)
 end)
 
--- Drawing circle
 local success, Drawing = pcall(function() return Drawing end)
 local aimCircle
 if success and Drawing then
@@ -144,7 +141,6 @@ if success and Drawing then
 	aimCircle.Color = Color3.fromRGB(255,0,0)
 end
 
--- Valid target
 local function isValidTarget(player)
 	if not player or not player.Character then return false end
 	if player == LocalPlayer then return false end
