@@ -1,0 +1,568 @@
+--Do not copy this script bro skid
+--// ================================
+--// SCRIPT AUTO FARM + SPIN RAGDOLL + THEME XANH LÁ M HIM
+--// ================================
+
+--// Services
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local plr = Players.LocalPlayer
+local Remotes = ReplicatedStorage:WaitForChild("Remotes")
+
+--// Settings
+local runningAutofarm = false
+local runningUpgrade = false
+local runningNextRagdoll = false
+local runningRefine = false
+local slamDuration = 20
+local slamVelocity = 100
+
+--// Freeze/unfreeze
+local function setFrozen(char, state)
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if hrp then hrp.Anchored = state end
+end
+
+--// Safe teleport character
+local function safeTeleport(char, cframeAbove)
+    local parts = {}
+    for _, part in pairs(char:GetDescendants()) do
+        if part:IsA("BasePart") then
+            parts[#parts+1] = part
+            part.Anchored = true
+            part.AssemblyLinearVelocity = Vector3.new()
+            part.AssemblyAngularVelocity = Vector3.new()
+        end
+    end
+
+    for _, part in pairs(parts) do
+        part.CFrame = cframeAbove + Vector3.new(math.random(-1,1), 0, math.random(-1,1))
+    end
+
+    task.wait(0.3)
+    for _, part in pairs(parts) do
+        part.Anchored = false
+    end
+end
+
+--// Fire ragdoll
+local function fireRagdollTouch()
+    local char = plr.Character
+    if not char then return end
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    local ragdollPart = workspace:FindFirstChild("RagdollParts") and workspace.RagdollParts:FindFirstChild("RagdollCollission")
+    if hrp and ragdollPart then
+        local touchInterest = ragdollPart:FindFirstChildOfClass("TouchTransmitter")
+        if touchInterest then
+            firetouchinterest(hrp, ragdollPart, 0)
+            task.wait()
+            firetouchinterest(hrp, ragdollPart, 1)
+        end
+    end
+end
+
+--// Autofarm loop
+local function autofarmLoop()
+    while runningAutofarm do
+        local char = plr.Character
+        if not char then
+            task.wait(1)
+        else
+            local hrp = char:FindFirstChild("HumanoidRootPart")
+            local head = char:FindFirstChild("Head")
+            local spawnFolder = workspace:FindFirstChild("Spawn")
+            if hrp and head and spawnFolder then
+                local targetPart = workspace:GetChildren()[50]
+                local teleportTarget = spawnFolder:GetChildren()[84]
+                if targetPart and teleportTarget then
+                    fireRagdollTouch()
+                    local startTime = tick()
+                    while tick()-startTime < slamDuration and runningAutofarm do
+                        if not (hrp and head and targetPart) then break end
+                        local direction = (targetPart.Position - hrp.Position).Unit
+                        local velocity = direction * slamVelocity
+                        for _, partName in pairs({"HumanoidRootPart","Head","Torso","Left Arm","Right Arm","Left Leg","Right Leg"}) do
+                            local part = char:FindFirstChild(partName)
+                            if part then
+                                part.AssemblyLinearVelocity = velocity + Vector3.new(0,15,0)
+                            end
+                        end
+                        task.wait(0.15)
+                    end
+                    setFrozen(char,true)
+                    safeTeleport(char, teleportTarget.CFrame + Vector3.new(0,10,0))
+                    setFrozen(char,false)
+                    local oldChar = char
+                    repeat task.wait(0.5) until not runningAutofarm or (plr.Character ~= oldChar and plr.Character:FindFirstChild("HumanoidRootPart"))
+                    if not runningAutofarm then return end
+                    task.wait(1)
+                    fireRagdollTouch()
+                else
+                    task.wait(1)
+                end
+            else
+                task.wait(1)
+            end
+        end
+    end
+end
+
+--// Auto upgrade
+local function autoUpgradeLoop()
+    while runningUpgrade do
+        Remotes.PurchaseBoneUpgrade:FireServer("Head")
+        Remotes.PurchaseBoneUpgrade:FireServer("Torso")
+        Remotes.PurchaseBoneUpgrade:FireServer("Arm")
+        Remotes.PurchaseBoneUpgrade:FireServer("Leg")
+        task.wait(0.2)
+    end
+end
+
+--// Auto next ragdoll
+local function autoNextRagdollLoop()
+    while runningNextRagdoll do
+        Remotes.PurchaseNextRagdoll:FireServer()
+        task.wait(0.5)
+    end
+end
+
+--// Auto refine
+local function autoRefineLoop()
+    while runningRefine do
+        Remotes.RefineRagdoll:FireServer()
+        task.wait(0.5)
+    end
+end
+
+--// INTRO LOADING SCREEN
+local TweenService = game:GetService("TweenService")
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "IntroGui"
+ScreenGui.IgnoreGuiInset = true
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = plr:WaitForChild("PlayerGui")
+
+local Background = Instance.new("ImageLabel")
+Background.Size = UDim2.new(1, 0, 1, 0)
+Background.BackgroundTransparency = 1
+Background.Image = "rbxassetid://0" -- Thay ID nh nn ti ây
+Background.ScaleType = Enum.ScaleType.Crop
+Background.Parent = ScreenGui
+
+local LoadingBarBack = Instance.new("Frame")
+LoadingBarBack.AnchorPoint = Vector2.new(0.5, 0.5)
+LoadingBarBack.Position = UDim2.new(0.5, 0, 0.7, 0)
+LoadingBarBack.Size = UDim2.new(0.5, 0, 0.05, 0)
+LoadingBarBack.BackgroundColor3 = Color3.fromRGB(50, 80, 50)
+LoadingBarBack.Parent = Background
+
+local UICornerBack = Instance.new("UICorner", LoadingBarBack)
+UICornerBack.CornerRadius = UDim.new(1, 0)
+
+local LoadingBar = Instance.new("Frame")
+LoadingBar.Size = UDim2.new(0, 0, 1, 0)
+LoadingBar.BackgroundColor3 = Color3.fromRGB(0, 180, 80)
+LoadingBar.Parent = LoadingBarBack
+Instance.new("UICorner", LoadingBar).CornerRadius = UDim.new(1, 0)
+
+local PercentLabel = Instance.new("TextLabel")
+PercentLabel.AnchorPoint = Vector2.new(0.5, 0.5)
+PercentLabel.Position = UDim2.new(0.5, 0, 0.5, 0)
+PercentLabel.Size = UDim2.new(1, 0, 1, 0)
+PercentLabel.BackgroundTransparency = 1
+PercentLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+PercentLabel.TextScaled = true
+PercentLabel.Font = Enum.Font.GothamBold
+PercentLabel.Parent = LoadingBarBack
+PercentLabel.Text = "0%"
+
+local Title = Instance.new("TextLabel")
+Title.AnchorPoint = Vector2.new(0.5, 0.5)
+Title.Position = UDim2.new(0.5, 0, 0.4, 0)
+Title.Size = UDim2.new(0.6, 0, 0.2, 0)
+Title.BackgroundTransparency = 1
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.TextScaled = true
+Title.Font = Enum.Font.GothamBold
+Title.Parent = Background
+Title.Text = "KMENIN GUI"
+
+-- Rainbow Text
+local function hsvRainbow(speed)
+	local t = tick() * speed
+	return Color3.fromHSV((t % 1), 1, 1)
+end
+
+local run = true
+task.spawn(function()
+	while run do
+		Title.TextColor3 = hsvRainbow(0.5)
+		task.wait(0.1)
+	end
+end)
+
+for i = 1, 100 do
+	LoadingBar.Size = UDim2.new(i/100, 0, 1, 0)
+	PercentLabel.Text = i .. "%"
+	task.wait(0.05)
+end
+
+run = false
+TweenService:Create(Background, TweenInfo.new(1), {ImageTransparency = 1}):Play()
+TweenService:Create(Title, TweenInfo.new(1), {TextTransparency = 1}):Play()
+TweenService:Create(LoadingBarBack, TweenInfo.new(1), {BackgroundTransparency = 1}):Play()
+TweenService:Create(PercentLabel, TweenInfo.new(1), {TextTransparency = 1}):Play()
+task.wait(1.2)
+ScreenGui:Destroy()
+
+--// Rayfield UI
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+   Name = "by kmenin",
+   LoadingTitle = "kmenin gui",
+   LoadingSubtitle = "by kmenin",
+   Theme = {
+      TextColor = Color3.fromRGB(235,255,235),
+      Background = Color3.fromRGB(15,25,15),
+      Topbar = Color3.fromRGB(25,45,25),
+      Shadow = Color3.fromRGB(10,20,10),
+      NotificationBackground = Color3.fromRGB(20,35,20),
+      NotificationActionsBackground = Color3.fromRGB(210,240,210),
+      TabBackground = Color3.fromRGB(40,70,40),
+      TabStroke = Color3.fromRGB(45,85,45),
+      TabBackgroundSelected = Color3.fromRGB(120,200,120),
+      TabTextColor = Color3.fromRGB(230,255,230),
+      SelectedTabTextColor = Color3.fromRGB(15,30,15),
+      ElementBackground = Color3.fromRGB(25,45,25),
+      ElementBackgroundHover = Color3.fromRGB(35,60,35),
+      SecondaryElementBackground = Color3.fromRGB(20,35,20),
+      ElementStroke = Color3.fromRGB(40,70,40),
+      SecondaryElementStroke = Color3.fromRGB(35,60,35),
+      SliderBackground = Color3.fromRGB(35,90,35),
+      SliderProgress = Color3.fromRGB(60,160,60),
+      SliderStroke = Color3.fromRGB(80,190,80),
+      ToggleBackground = Color3.fromRGB(20,35,20),
+      ToggleEnabled = Color3.fromRGB(0,180,60),
+      ToggleDisabled = Color3.fromRGB(80,90,80),
+      ToggleEnabledStroke = Color3.fromRGB(0,200,80),
+      ToggleDisabledStroke = Color3.fromRGB(90,100,90),
+      ToggleEnabledOuterStroke = Color3.fromRGB(100,255,100),
+      ToggleDisabledOuterStroke = Color3.fromRGB(40,60,40),
+      DropdownSelected = Color3.fromRGB(40,70,40),
+      DropdownUnselected = Color3.fromRGB(30,50,30),
+      InputBackground = Color3.fromRGB(25,45,25),
+      InputStroke = Color3.fromRGB(55,90,55),
+      PlaceholderColor = Color3.fromRGB(180,210,180)
+   },
+   ToggleUIKeybind = "A"
+})
+
+Rayfield:Notify({
+   Title = "Thông báo",
+   Content = "Cam on da dung script nay! Like va dang ky cho kenh kmenin de co dong luc lam nhung script xin xo hon,
+   Duration = 6.5,
+   Image = 4483362458,
+})
+
+--Tabs
+local Tab = Window:CreateTab("Main", 9405921255)
+local Section = Tab:CreateSection("Auto Farm")
+
+local PTab = Window:CreateTab("Player", 6723839910)
+
+local CrTab = Window:CreateTab("Credits", 9405930424)
+
+-- T ng farm
+Tab:CreateToggle({
+    Name = "auto farm",
+    CurrentValue = false,
+    Callback = function(v)
+        runningAutofarm = v
+        if v then task.spawn(autofarmLoop) end
+    end
+})
+
+Tab:CreateSlider({
+    Name = "Thoi gian farm",
+    Range = {5,60},
+    Increment = 1,
+    CurrentValue = 20,
+    Callback = function(val)
+        slamDuration = val
+    end
+})
+
+Tab:CreateSlider({
+    Name = "Toc do farm",
+    Range = {50,500},
+    Increment = 10,
+    CurrentValue = 100,
+    Callback = function(val)
+        slamVelocity = val
+    end
+})
+
+-- Auto upgrade, next ragdoll, refine
+Tab:CreateToggle({ Name = "Auto Upgrade", CurrentValue = false, Callback = function(v) runningUpgrade = v if v then task.spawn(autoUpgradeLoop) end end })
+
+local Divider = Tab:CreateDivider()
+
+Tab:CreateToggle({ Name = "Auto Next Ragdoll", CurrentValue = false, Callback = function(v) runningNextRagdoll = v if v then task.spawn(autoNextRagdollLoop) end end })
+
+local Divider = Tab:CreateDivider()
+
+Tab:CreateToggle({ Name = "Auto Refine", CurrentValue = false, Callback = function(v) runningRefine = v if v then task.spawn(autoRefineLoop) end end })
+
+local Divider = Tab:CreateDivider()
+
+-- Spin ragdoll
+local spinning = false
+local spinSpeed = 5
+
+local function spinRagdoll(char)
+	while spinning do
+		if not char or not char:FindFirstChild("HumanoidRootPart") then break end
+		local hrp = char:FindFirstChild("HumanoidRootPart")
+		hrp.CFrame = hrp.CFrame * CFrame.Angles(0, math.rad(spinSpeed), 0)
+		task.wait(0.03)
+	end
+end
+
+plr.CharacterAdded:Connect(function(char)
+	if spinning then
+		task.wait(1)
+		task.spawn(function() spinRagdoll(char) end)
+	end
+end)
+
+Tab:CreateToggle({
+	Name = "Spin Ragdoll",
+	CurrentValue = false,
+	Callback = function(state)
+		spinning = state
+		local char = plr.Character
+		if state and char then task.spawn(function() spinRagdoll(char) end) end
+	end
+})
+
+local Divider = Tab:CreateDivider()
+
+Tab:CreateSlider({
+	Name = "Toc do spin quay",
+	Range = {1, 50},
+	Increment = 1,
+	CurrentValue = 5,
+	Callback = function(value)
+		spinSpeed = value
+	end
+})
+
+local Button = PTab:CreateButton({
+   Name = "FPS booster",
+   Callback = function()
+   loadstring(game:HttpGet("https://raw.githubusercontent.com/vexroxd/My-Script-/main/roblox%20fps%20unlocker%20script.lua"))()
+   end,
+})
+
+local Toggle = PTab:CreateToggle({
+    Name = "Anti AFK",
+    CurrentValue = false,
+    Flag = "AntiAFK_Toggle",
+    Callback = function(Value)
+        if Value then
+            getgenv().AntiAFK_Enabled = true
+            task.spawn(function()
+                local VirtualUser = game:GetService("VirtualUser")
+                local Players = game:GetService("Players")
+                local player = Players.LocalPlayer
+
+                while getgenv().AntiAFK_Enabled do
+                    task.wait(60) -- mi 60 giây thc hin 1 ln
+                    VirtualUser:CaptureController()
+                    VirtualUser:ClickButton2(Vector2.new())
+                end
+            end)
+        else
+            getgenv().AntiAFK_Enabled = false
+        end
+    end,
+})
+
+local Divider = PTab:CreateDivider()
+
+local Toggle = PTab:CreateToggle({
+    Name = "Infinite Jump",
+    CurrentValue = false,
+    Flag = "InfJump_Toggle",
+    Callback = function(Value)
+        if Value then
+            getgenv().InfJumpEnabled = true
+            local UserInputService = game:GetService("UserInputService")
+
+            UserInputService.JumpRequest:Connect(function()
+                if getgenv().InfJumpEnabled then
+                    local player = game:GetService("Players").LocalPlayer
+                    if player.Character and player.Character:FindFirstChildOfClass("Humanoid") then
+                        player.Character:FindFirstChildOfClass("Humanoid"):ChangeState("Jumping")
+                    end
+                end
+            end)
+        else
+            getgenv().InfJumpEnabled = false
+        end
+    end,
+})
+
+local Divider = PTab:CreateDivider()
+
+local speeds = 1
+local speaker = game:GetService("Players").LocalPlayer
+local tpwalking = false
+local nowe = false
+local flyConnection = nil
+
+local function startFly()
+	nowe = true
+	tpwalking = true
+
+	local hb = game:GetService("RunService").Heartbeat
+	task.spawn(function()
+		while tpwalking and hb:Wait() do
+			local chr = speaker.Character
+			local hum = chr and chr:FindFirstChildWhichIsA("Humanoid")
+			if hum and hum.Parent and hum.MoveDirection.Magnitude > 0 then
+				chr:TranslateBy(hum.MoveDirection)
+			end
+		end
+	end)
+
+	speaker.Character.Animate.Disabled = true
+	local Hum = speaker.Character:FindFirstChildOfClass("Humanoid") or speaker.Character:FindFirstChildOfClass("AnimationController")
+	for _, v in next, Hum:GetPlayingAnimationTracks() do
+		v:AdjustSpeed(0)
+	end
+
+	local hum = speaker.Character:FindFirstChildWhichIsA("Humanoid")
+	for _, state in pairs(Enum.HumanoidStateType:GetEnumItems()) do
+		hum:SetStateEnabled(state, false)
+	end
+	hum:ChangeState(Enum.HumanoidStateType.Swimming)
+
+	local torso = speaker.Character:FindFirstChild("Torso") or speaker.Character:FindFirstChild("UpperTorso")
+	if not torso then return end
+
+	local bg = Instance.new("BodyGyro", torso)
+	bg.P = 9e4
+	bg.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+	bg.CFrame = torso.CFrame
+
+	local bv = Instance.new("BodyVelocity", torso)
+	bv.Velocity = Vector3.new(0, 0.1, 0)
+	bv.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+
+	hum.PlatformStand = true
+
+	local ctrl = {f = 0, b = 0, l = 0, r = 0}
+	local speed = 0
+	local maxspeed = 50
+	local uis = game:GetService("UserInputService")
+
+	local function keyDown(input)
+		if input.KeyCode == Enum.KeyCode.W then ctrl.f = speeds end
+		if input.KeyCode == Enum.KeyCode.S then ctrl.b = -speeds end
+		if input.KeyCode == Enum.KeyCode.A then ctrl.l = -speeds end
+		if input.KeyCode == Enum.KeyCode.D then ctrl.r = speeds end
+	end
+
+	local function keyUp(input)
+		if input.KeyCode == Enum.KeyCode.W then ctrl.f = 0 end
+		if input.KeyCode == Enum.KeyCode.S then ctrl.b = 0 end
+		if input.KeyCode == Enum.KeyCode.A then ctrl.l = 0 end
+		if input.KeyCode == Enum.KeyCode.D then ctrl.r = 0 end
+	end
+
+	uis.InputBegan:Connect(keyDown)
+	uis.InputEnded:Connect(keyUp)
+
+	flyConnection = game:GetService("RunService").RenderStepped:Connect(function()
+		if not nowe or speaker.Character.Humanoid.Health <= 0 then return end
+
+		if ctrl.l + ctrl.r ~= 0 or ctrl.f + ctrl.b ~= 0 then
+			speed += 0.5 + (speed / maxspeed)
+			if speed > maxspeed then speed = maxspeed end
+		elseif speed ~= 0 then
+			speed -= 1
+			if speed < 0 then speed = 0 end
+		end
+
+		if ctrl.f + ctrl.b ~= 0 or ctrl.l + ctrl.r ~= 0 then
+			bv.Velocity = ((workspace.CurrentCamera.CFrame.LookVector * (ctrl.f + ctrl.b)) +
+				((workspace.CurrentCamera.CFrame * CFrame.new(ctrl.l + ctrl.r, (ctrl.f + ctrl.b) * 0.2, 0)).Position - workspace.CurrentCamera.CFrame.Position)) * speed
+		else
+			bv.Velocity = Vector3.new(0, 0, 0)
+		end
+
+		bg.CFrame = workspace.CurrentCamera.CFrame * CFrame.Angles(-math.rad((ctrl.f + ctrl.b) * 50 * speed / maxspeed), 0, 0)
+	end)
+end
+
+local function stopFly()
+	nowe = false
+	tpwalking = false
+	if flyConnection then flyConnection:Disconnect() flyConnection = nil end
+
+	local chr = speaker.Character
+	if chr then
+		local torso = chr:FindFirstChild("Torso") or chr:FindFirstChild("UpperTorso")
+		if torso then
+			if torso:FindFirstChildOfClass("BodyGyro") then torso:FindFirstChildOfClass("BodyGyro"):Destroy() end
+			if torso:FindFirstChildOfClass("BodyVelocity") then torso:FindFirstChildOfClass("BodyVelocity"):Destroy() end
+		end
+	end
+
+	local hum = chr and chr:FindFirstChildWhichIsA("Humanoid")
+	if hum then
+		hum.PlatformStand = false
+		for _, state in pairs(Enum.HumanoidStateType:GetEnumItems()) do
+			hum:SetStateEnabled(state, true)
+		end
+	end
+
+	speaker.Character.Animate.Disabled = false
+end
+
+local Toggle = PTab:CreateToggle({
+	Name = "Fly",
+	CurrentValue = false,
+	Flag = "Fly_Toggle",
+	Callback = function(Value)
+		if Value then
+			startFly()
+		else
+			stopFly()
+		end
+	end,
+})
+
+local Slider = PTab:CreateSlider({
+    Name = "Fly Speed",
+    Range = {1, 250}, -- Gii hn t 1 n 250
+    Increment = 1, -- Tng gim tng n v
+    Suffix = "Speed", -- Hin th ch sau giá tr
+    CurrentValue = 10, -- Mc nh
+    Flag = "FlySpeed_Slider",
+    Callback = function(Value)
+        speeds = Value -- Cp nht tc  bay
+    end,
+})
+
+--Credits
+local Divider = CrTab:CreateDivider()
+
+local Label = CrTab:CreateLabel("Owner: Kmenin", 119626888701707, Color3.fromRGB(180,210,180), false) -- Title, Icon, Color, IgnoreTheme
+local Label = CrTab:CreateLabel("Helper: Kha_ScriperX", 73032661237918, Color3.fromRGB(180,210,180), false) -- Title, Icon, Color, IgnoreTheme
+
+local Divider = CrTab:CreateDivider()
+
+Rayfield:LoadConfiguration()
