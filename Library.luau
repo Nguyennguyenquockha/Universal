@@ -266,4 +266,4 @@ function Library:CreateWindow(Title)
     return Window
 end
 
-return Libraryu
+return Library
