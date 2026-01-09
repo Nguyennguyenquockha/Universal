@@ -1,3 +1,4 @@
+-- File: NalUI.lua
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
@@ -185,13 +186,6 @@ local function SaveCfg(Name)
 	writefile(NalLib.Folder .. "/" .. Name .. ".txt", tostring(HttpService:JSONEncode(Data)))
 end
 
-local WhitelistedMouse = {Enum.UserInputType.MouseButton1, Enum.UserInputType.MouseButton2,Enum.UserInputType.MouseButton3}
-local BlacklistedKeys = {Enum.KeyCode.Unknown,Enum.KeyCode.W,Enum.KeyCode.A,Enum.KeyCode.S,Enum.KeyCode.D,Enum.KeyCode.Up,Enum.KeyCode.Left,Enum.KeyCode.Down,Enum.KeyCode.Right,Enum.KeyCode.Slash,Enum.KeyCode.Tab,Enum.KeyCode.Backspace,Enum.KeyCode.Escape}
-
-local function CheckKey(Table, Key)
-	for _, v in next, Table do if v == Key then return true end end
-end
-
 CreateElement("Corner", function(Scale, Offset)
 	return Create("UICorner", { CornerRadius = UDim.new(Scale or 0, Offset or 10) })
 end)
@@ -259,7 +253,7 @@ function NalLib:MakeNotification(NotificationConfig)
 
 		TweenService:Create(NotificationFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quint), {Position = UDim2.new(0, 0, 0, 0)}):Play()
 		wait(NotificationConfig.Time - 0.88)
-		TweenService:Create(NotificationFrame.Ico, TweenInfo.new(0.4, Enum.EasingStyle.Quint), {ImageTransparency = 1}):Play()
+		TweenService:Create(NotificationFrame.Icon, TweenInfo.new(0.4, Enum.EasingStyle.Quint), {ImageTransparency = 1}):Play()
 		TweenService:Create(NotificationFrame, TweenInfo.new(0.8, Enum.EasingStyle.Quint), {BackgroundTransparency = 0.6}):Play()
 		wait(0.3)
 		TweenService:Create(NotificationFrame.UIStroke, TweenInfo.new(0.6, Enum.EasingStyle.Quint), {Transparency = 0.9}):Play()
@@ -297,7 +291,7 @@ function NalLib:MakeWindow(WindowConfig)
 	WindowConfig.Icon = WindowConfig.Icon or "rbxassetid://8834748103"
     
     -- Open Button Config
-    WindowConfig.OpenButton = WindowConfig.OpenButton or false -- Can be true/false or a table
+    WindowConfig.OpenButton = WindowConfig.OpenButton or false
     local OpenBtnConfig = {
         Visible = false,
         Color = Color3.fromRGB(25, 25, 25),
@@ -358,12 +352,11 @@ function NalLib:MakeWindow(WindowConfig)
     
     AddDraggingFunctionality(MainWindow.Drag, MainWindow)
 
-    --// Open Button Implementation
     if OpenBtnConfig.Visible then
         local OpenButtonFrame = SetChildren(SetProps(MakeElement("RoundFrame", OpenBtnConfig.Color, 0, 6), {
             Parent = Nal,
             Size = UDim2.new(0, OpenBtnConfig.Width, 0, OpenBtnConfig.Height),
-            Position = UDim2.new(0, 10, 0, 10), -- Default Top Left
+            Position = UDim2.new(0, 10, 0, 10),
             Visible = false,
             Name = "OpenButton"
         }), {
@@ -380,7 +373,6 @@ function NalLib:MakeWindow(WindowConfig)
             UIHidden = false
         end)
         
-        -- Override Close Logic to show Open Button
         AddConnection(CloseBtn.MouseButton1Up, function()
             MainWindow.Visible = false
             UIHidden = true
@@ -455,6 +447,7 @@ function NalLib:MakeWindow(WindowConfig)
 
 		local function GetElements(ItemParent)
 			local ElementFunction = {}
+			
 			function ElementFunction:AddLabel(Text)
 				local LabelFrame = AddThemeObject(SetChildren(SetProps(MakeElement("RoundFrame", Color3.fromRGB(255, 255, 255), 0, 5), { Size = UDim2.new(1, 0, 0, 30), BackgroundTransparency = 0.7, Parent = ItemParent }), {
 					AddThemeObject(SetProps(MakeElement("Label", Text, 15), { Size = UDim2.new(1, -12, 1, 0), Position = UDim2.new(0, 12, 0, 0), Font = Enum.Font.GothamBold, Name = "Content" }), "Text"),
@@ -465,7 +458,6 @@ function NalLib:MakeWindow(WindowConfig)
 				return LabelFunction
 			end
             
-            --// NEW FEATURE: Space Script
             function ElementFunction:AddSpacer(Height)
                 local Spacer = Create("Frame", {
                     BackgroundTransparency = 1,
@@ -505,16 +497,15 @@ function NalLib:MakeWindow(WindowConfig)
 				ToggleConfig.Default = ToggleConfig.Default or false
 				ToggleConfig.Callback = ToggleConfig.Callback or function() end
 				ToggleConfig.Color = ToggleConfig.Color or Color3.fromRGB(0,170,255)
-				ToggleConfig.Style = ToggleConfig.Style or "Toggle" -- Toggle | Checkbox
+				ToggleConfig.Style = ToggleConfig.Style or "Toggle"
 				ToggleConfig.Flag = ToggleConfig.Flag
 				ToggleConfig.Save = ToggleConfig.Save or false
 
-				local Toggle = {Value = ToggleConfig.Default, Save = ToggleConfig.Save}
+				local Toggle = {Value = ToggleConfig.Default, Save = ToggleConfig.Save, Type = "Toggle"}
 				local Click = SetProps(MakeElement("Button"), {Size = UDim2.new(1,0,1,0)})
 
 				local ToggleBox
 
-				-- CHECKBOX STYLE
 				if ToggleConfig.Style == "Checkbox" then
 					ToggleBox = SetChildren(SetProps(MakeElement("Frame", Color3.fromRGB(40,40,40)), {
 						Size = UDim2.new(0,18,0,18),
@@ -522,29 +513,32 @@ function NalLib:MakeWindow(WindowConfig)
 						AnchorPoint = Vector2.new(0.5,0.5)
 					}), {
 						MakeElement("Corner",0,4),
-						MakeElement("Stroke"),
+						Create("UIStroke", {Color = Color3.fromRGB(60,60,60), Thickness = 1}),
 						SetProps(MakeElement("Image","rbxassetid://6031094678"),{
 							Name="Check",
 							Size=UDim2.new(1,-4,1,-4),
 							Position=UDim2.new(0,2,0,2),
-							ImageTransparency=1
+							ImageTransparency=1,
+							ImageColor3 = Color3.fromRGB(240,240,240)
 						})
 					})
 				else
-					-- SWITCH STYLE
 					ToggleBox = SetChildren(SetProps(MakeElement("Frame", Color3.fromRGB(40,40,40)), {
 						Size = UDim2.new(0,36,0,18),
 						Position = UDim2.new(1,-30,0.5,0),
 						AnchorPoint = Vector2.new(0.5,0.5)
 					}), {
 						MakeElement("Corner",1,0),
-						MakeElement("Stroke"),
+						Create("UIStroke", {Color = Color3.fromRGB(60,60,60), Thickness = 1}),
 						SetChildren(SetProps(MakeElement("Frame", Color3.fromRGB(255,255,255)), {
 							Name="Knob",
 							Size=UDim2.new(0,14,0,14),
 							Position=UDim2.new(0,2,0.5,0),
 							AnchorPoint=Vector2.new(0,0.5)
-						}), {MakeElement("Corner",1,0)})
+						}), {
+							MakeElement("Corner",1,0),
+							Create("UIStroke", {Color = Color3.fromRGB(60,60,60), Thickness = 1})
+						})
 					})
 				end
 
@@ -563,7 +557,7 @@ function NalLib:MakeWindow(WindowConfig)
 				}), "Second")
 
 				function Toggle:Set(Value)
-					Toggle.Value = Value
+					self.Value = Value
 
 					if ToggleConfig.Style == "Checkbox" then
 						TweenService:Create(ToggleBox.Check, TweenInfo.new(0.25), {
@@ -584,7 +578,9 @@ function NalLib:MakeWindow(WindowConfig)
 
 				AddConnection(Click.MouseButton1Click,function()
 					Toggle:Set(not Toggle.Value)
-					SaveCfg(game.GameId)
+					if Toggle.Save and NalLib.SaveCfg then
+						SaveCfg(game.GameId)
+					end
 				end)
 
 				Toggle:Set(Toggle.Value)
@@ -592,7 +588,7 @@ function NalLib:MakeWindow(WindowConfig)
 				return Toggle
 			end
 
-           function ElementFunction:AddGroup(GroupConfig)
+			function ElementFunction:AddGroup(GroupConfig)
 				GroupConfig = GroupConfig or {}
 				GroupConfig.Name = GroupConfig.Name or "Group"
 
@@ -604,7 +600,7 @@ function NalLib:MakeWindow(WindowConfig)
 						AutomaticSize = Enum.AutomaticSize.Y
 					}
 				), {
-					AddThemeObject(SetProps(MakeElement("TextLabel"), {
+					AddThemeObject(SetProps(MakeElement("TextLabel", {
 						Text = GroupConfig.Name,
 						Font = Enum.Font.GothamBold,
 						TextSize = 14,
@@ -612,12 +608,11 @@ function NalLib:MakeWindow(WindowConfig)
 						BackgroundTransparency = 1,
 						Size = UDim2.new(1, -24, 0, 28),
 						Position = UDim2.new(0, 12, 0, 0)
-					}), "Text"),
-
+					})), "Text"),
 					AddThemeObject(MakeElement("Stroke"), "Stroke")
 				}), "Second")
 
-				local GroupContainer = SetChildren(SetProps(MakeElement("Frame"), {
+				local GroupContainer = SetChildren(SetProps(MakeElement("Frame", {
 					Parent = GroupFrame,
 					Position = UDim2.new(0, 0, 0, 32),
 					Size = UDim2.new(1, 0, 0, 0),
@@ -644,7 +639,7 @@ function NalLib:MakeWindow(WindowConfig)
 				SliderConfig.Flag = SliderConfig.Flag or nil
 				SliderConfig.Save = SliderConfig.Save or false
 
-				local Slider = {Value = SliderConfig.Default, Save = SliderConfig.Save}
+				local Slider = {Value = SliderConfig.Default, Save = SliderConfig.Save, Type = "Slider"}
 				local Dragging = false
 				local SliderDrag = SetChildren(SetProps(MakeElement("RoundFrame", SliderConfig.Color, 0, 5), { Size = UDim2.new(0, 0, 1, 0), BackgroundTransparency = 0.3, ClipsDescendants = true }), {
 					AddThemeObject(SetProps(MakeElement("Label", "value", 13), { Size = UDim2.new(1, -12, 0, 14), Position = UDim2.new(0, 12, 0, 6), Font = Enum.Font.GothamBold, Name = "Value", TextTransparency = 0 }), "Text")
@@ -664,7 +659,9 @@ function NalLib:MakeWindow(WindowConfig)
 					if Dragging and Input.UserInputType == Enum.UserInputType.MouseMovement then 
 						local SizeScale = math.clamp((Input.Position.X - SliderBar.AbsolutePosition.X) / SliderBar.AbsoluteSize.X, 0, 1)
 						Slider:Set(SliderConfig.Min + ((SliderConfig.Max - SliderConfig.Min) * SizeScale)) 
-						SaveCfg(game.GameId)
+						if Slider.Save and NalLib.SaveCfg then
+							SaveCfg(game.GameId)
+						end
 					end
 				end)
 
@@ -680,7 +677,7 @@ function NalLib:MakeWindow(WindowConfig)
 				return Slider
 			end  
 
-            function ElementFunction:AddDropdown(DropdownConfig)
+			function ElementFunction:AddDropdown(DropdownConfig)
 				DropdownConfig = DropdownConfig or {}
 				DropdownConfig.Name = DropdownConfig.Name or "Dropdown"
 				DropdownConfig.Options = DropdownConfig.Options or {}
@@ -691,18 +688,17 @@ function NalLib:MakeWindow(WindowConfig)
 
 				local Dropdown = {
 					Value = DropdownConfig.Default,
-					Save = DropdownConfig.Save
+					Save = DropdownConfig.Save,
+					Type = "Dropdown"
 				}
 
 				local Open = false
 				local ContentSize = 0
 
-				-- CLICK BUTTON
 				local Click = SetProps(MakeElement("Button"), {
 					Size = UDim2.new(1,0,1,0)
 				})
 
-				-- ARROW
 				local Arrow = SetProps(MakeElement("Image","rbxassetid://7072718362"),{
 					Size = UDim2.new(0,18,0,18),
 					Position = UDim2.new(1,-28,0.5,0),
@@ -710,7 +706,6 @@ function NalLib:MakeWindow(WindowConfig)
 					Rotation = 0
 				})
 
-				-- MAIN FRAME
 				local Frame = AddThemeObject(SetChildren(SetProps(
 					MakeElement("RoundFrame", Color3.fromRGB(255,255,255), 0, 5),
 					{
@@ -726,13 +721,11 @@ function NalLib:MakeWindow(WindowConfig)
 						Font = Enum.Font.GothamBold,
 						TextXAlignment = Enum.TextXAlignment.Left
 					}),"Text"),
-
 					AddThemeObject(Arrow,"TextDark"),
 					AddThemeObject(MakeElement("Stroke"),"Stroke"),
 					Click
 				}),"Second")
 
-				-- OPTIONS CONTAINER
 				local Container = SetChildren(SetProps(MakeElement("Frame"),{
 					Parent = Frame,
 					Position = UDim2.new(0,0,0,36),
@@ -751,7 +744,6 @@ function NalLib:MakeWindow(WindowConfig)
 					end
 				end)
 
-				-- OPTIONS
 				for _,Option in ipairs(DropdownConfig.Options) do
 					local OptClick = SetProps(MakeElement("Button"),{
 						Size = UDim2.new(1,0,0,28)
@@ -767,7 +759,6 @@ function NalLib:MakeWindow(WindowConfig)
 							Font = Enum.Font.Gotham,
 							TextXAlignment = Enum.TextXAlignment.Left
 						}),"Text"),
-
 						AddThemeObject(MakeElement("Stroke"),"Stroke"),
 						OptClick
 					}),"Second")
@@ -785,7 +776,6 @@ function NalLib:MakeWindow(WindowConfig)
 					end)
 				end
 
-				-- TOGGLE OPEN
 				AddConnection(Click.MouseButton1Click,function()
 					Open = not Open
 					TweenService:Create(Arrow,TweenInfo.new(0.25),{
@@ -798,14 +788,12 @@ function NalLib:MakeWindow(WindowConfig)
 					}):Play()
 				end)
 
-				-- SET VALUE
 				function Dropdown:Set(Value)
 					self.Value = Value
 					Frame.Title.Text = DropdownConfig.Name .. ": " .. tostring(Value)
 					DropdownConfig.Callback(Value)
 				end
 
-				-- INIT
 				Dropdown:Set(Dropdown.Value)
 
 				if DropdownConfig.Flag then
@@ -819,51 +807,286 @@ function NalLib:MakeWindow(WindowConfig)
 				SectionConfig = SectionConfig or {}
 				SectionConfig.Name = SectionConfig.Name or "Section"
 				SectionConfig.Icon = SectionConfig.Icon
-				SectionConfig.IconSide = SectionConfig.IconSide or "Left" -- "Left" | "Right"
+				SectionConfig.IconSide = SectionConfig.IconSide or "Left"
 
-				local SectionFrame = SetProps(MakeElement("Frame"), {
+				local SectionFrame = SetProps(MakeElement("Frame", {
 					Parent = ItemParent,
 					Size = UDim2.new(1, -10, 0, 28),
 					BackgroundTransparency = 1
-				})
+				}))
 
-				local Content = SetProps(MakeElement("Frame"), {
+				local Content = SetProps(MakeElement("Frame", {
 					Parent = SectionFrame,
 					Size = UDim2.new(1, 0, 1, 0),
 					BackgroundTransparency = 1
-				})
+				}))
 
-				local Layout = MakeElement("List", 6)
+				local Layout = MakeElement("List", 0, 6)
 				Layout.FillDirection = Enum.FillDirection.Horizontal
+				Layout.VerticalAlignment = Enum.VerticalAlignment.Center
 				Layout.Parent = Content
 
-				local Title = SetProps(MakeElement("TextLabel"), {
-					Text = SectionConfig.Name,
-					Font = Enum.Font.GothamBold,
-					TextSize = 14,
+				local Title = AddThemeObject(SetProps(MakeElement("Label", SectionConfig.Name, 14), {
+					Size = UDim2.new(1, -24, 1, 0),
 					TextXAlignment = Enum.TextXAlignment.Left,
 					BackgroundTransparency = 1,
-					Size = UDim2.new(1, -24, 1, 0),
+					Font = Enum.Font.GothamBold,
 					TextColor3 = Color3.fromRGB(200,200,200)
-				})
+				}), "TextDark")
 
-				if SectionConfig.Icon then
-					local IconImage = SetProps(MakeElement("Image"), {
-						Image = SectionConfig.Icon,
+				if SectionConfig.Icon and SectionConfig.Icon ~= "" then
+					local IconImage = SetProps(MakeElement("Image", SectionConfig.Icon), {
 						Size = UDim2.new(0, 18, 0, 18),
-						BackgroundTransparency = 1
+						BackgroundTransparency = 1,
+						ImageColor3 = Color3.fromRGB(200,200,200)
 					})
+					
+					if GetIcon(SectionConfig.Icon) ~= nil then IconImage.Image = GetIcon(SectionConfig.Icon) end
 
 					if SectionConfig.IconSide == "Right" then
 						Title.Parent = Content
+						Title.Size = UDim2.new(1, -30, 1, 0)
 						IconImage.Parent = Content
+						IconImage.Position = UDim2.new(1, -20, 0.5, 0)
+						IconImage.AnchorPoint = Vector2.new(1, 0.5)
 					else
 						IconImage.Parent = Content
+						IconImage.Position = UDim2.new(0, 0, 0.5, 0)
+						IconImage.AnchorPoint = Vector2.new(0, 0.5)
 						Title.Parent = Content
+						Title.Position = UDim2.new(0, 25, 0, 0)
+						Title.Size = UDim2.new(1, -30, 1, 0)
 					end
 				else
 					Title.Parent = Content
 				end
+			end
+
+			-- Thêm các element mới
+			function ElementFunction:AddTextbox(TextboxConfig)
+				TextboxConfig = TextboxConfig or {}
+				TextboxConfig.Name = TextboxConfig.Name or "Textbox"
+				TextboxConfig.Placeholder = TextboxConfig.Placeholder or "Enter text..."
+				TextboxConfig.Callback = TextboxConfig.Callback or function() end
+				TextboxConfig.Flag = TextboxConfig.Flag
+				TextboxConfig.Save = TextboxConfig.Save or false
+
+				local Textbox = {Value = "", Save = TextboxConfig.Save, Type = "Textbox"}
+				
+				local TextboxFrame = AddThemeObject(SetChildren(SetProps(MakeElement("RoundFrame", Color3.fromRGB(255,255,255), 0, 5), {
+					Size = UDim2.new(1, 0, 0, 36),
+					Parent = ItemParent
+				}), {
+					AddThemeObject(SetProps(MakeElement("Label", TextboxConfig.Name, 15), {
+						Size = UDim2.new(1, -12, 0, 14),
+						Position = UDim2.new(0, 12, 0, 10),
+						Font = Enum.Font.GothamBold,
+						Name = "Title"
+					}), "Text"),
+					AddThemeObject(MakeElement("Stroke"), "Stroke"),
+					SetChildren(SetProps(MakeElement("RoundFrame", Color3.fromRGB(40,40,40), 0, 4), {
+						Size = UDim2.new(1, -24, 0, 22),
+						Position = UDim2.new(0, 12, 0, 28)
+					}), {
+						MakeElement("Stroke", Color3.fromRGB(60,60,60), 1),
+						SetProps(MakeElement("TextBox", {
+							Size = UDim2.new(1, -8, 1, 0),
+							Position = UDim2.new(0, 4, 0, 0),
+							BackgroundTransparency = 1,
+							Text = "",
+							PlaceholderText = TextboxConfig.Placeholder,
+							TextColor3 = Color3.fromRGB(240,240,240),
+							TextSize = 14,
+							Font = Enum.Font.Gotham,
+							ClearTextOnFocus = false
+						}))
+					})
+				}), "Second")
+
+				local TextBox = TextboxFrame:FindFirstChildWhichIsA("TextBox")
+				
+				TextBox.FocusLost:Connect(function(enterPressed)
+					Textbox.Value = TextBox.Text
+					TextboxConfig.Callback(TextBox.Text, enterPressed)
+					if Textbox.Save and NalLib.SaveCfg then
+						SaveCfg(game.GameId)
+					end
+				end)
+
+				function Textbox:Set(Value)
+					TextBox.Text = Value
+					Textbox.Value = Value
+				end
+
+				if TextboxConfig.Flag then
+					NalLib.Flags[TextboxConfig.Flag] = Textbox
+				end
+
+				return Textbox
+			end
+
+			function ElementFunction:AddKeybind(KeybindConfig)
+				KeybindConfig = KeybindConfig or {}
+				KeybindConfig.Name = KeybindConfig.Name or "Keybind"
+				KeybindConfig.Default = KeybindConfig.Default or Enum.KeyCode.F
+				KeybindConfig.Callback = KeybindConfig.Callback or function() end
+				KeybindConfig.Flag = KeybindConfig.Flag
+				KeybindConfig.Save = KeybindConfig.Save or false
+
+				local Keybind = {Value = KeybindConfig.Default, Save = KeybindConfig.Save, Type = "Keybind"}
+				local Listening = false
+
+				local KeybindFrame = AddThemeObject(SetChildren(SetProps(MakeElement("RoundFrame", Color3.fromRGB(255,255,255), 0, 5), {
+					Size = UDim2.new(1, 0, 0, 36),
+					Parent = ItemParent
+				}), {
+					AddThemeObject(SetProps(MakeElement("Label", KeybindConfig.Name, 15), {
+						Size = UDim2.new(1, -100, 1, 0),
+						Position = UDim2.new(0, 12, 0, 0),
+						Font = Enum.Font.GothamBold,
+						Name = "Title"
+					}), "Text"),
+					AddThemeObject(MakeElement("Stroke"), "Stroke"),
+					SetChildren(SetProps(MakeElement("RoundFrame", Color3.fromRGB(40,40,40), 0, 4), {
+						Size = UDim2.new(0, 70, 0, 22),
+						Position = UDim2.new(1, -82, 0, 7)
+					}), {
+						MakeElement("Stroke", Color3.fromRGB(60,60,60), 1),
+						SetProps(MakeElement("TextButton", {
+							Size = UDim2.new(1, 0, 1, 0),
+							BackgroundTransparency = 1,
+							Text = KeybindConfig.Default.Name,
+							TextColor3 = Color3.fromRGB(240,240,240),
+							TextSize = 14,
+							Font = Enum.Font.Gotham,
+							Name = "KeyButton"
+						}))
+					})
+				}), "Second")
+
+				local KeyButton = KeybindFrame:FindFirstChild("KeyButton")
+				
+				local function SetKeybind(Key)
+					Keybind.Value = Key
+					KeyButton.Text = Key.Name
+					KeybindConfig.Callback(Key)
+					if Keybind.Save and NalLib.SaveCfg then
+						SaveCfg(game.GameId)
+					end
+				end
+
+				KeyButton.MouseButton1Click:Connect(function()
+					Listening = true
+					KeyButton.Text = "..."
+				end)
+
+				AddConnection(UserInputService.InputBegan, function(Input)
+					if Listening then
+						local Key = (Input.KeyCode ~= Enum.KeyCode.Unknown and Input.KeyCode) or Input.UserInputType
+						if Key then
+							SetKeybind(Key)
+						end
+						Listening = false
+					elseif Keybind.Value ~= nil and Input.KeyCode == Keybind.Value then
+						KeybindConfig.Callback(Keybind.Value)
+					end
+				end)
+
+				function Keybind:Set(Key)
+					SetKeybind(Key)
+				end
+
+				if KeybindConfig.Flag then
+					NalLib.Flags[KeybindConfig.Flag] = Keybind
+				end
+
+				return Keybind
+			end
+
+			function ElementFunction:AddColorPicker(ColorPickerConfig)
+				ColorPickerConfig = ColorPickerConfig or {}
+				ColorPickerConfig.Name = ColorPickerConfig.Name or "ColorPicker"
+				ColorPickerConfig.Default = ColorPickerConfig.Default or Color3.fromRGB(255,0,0)
+				ColorPickerConfig.Callback = ColorPickerConfig.Callback or function() end
+				ColorPickerConfig.Flag = ColorPickerConfig.Flag
+				ColorPickerConfig.Save = ColorPickerConfig.Save or false
+
+				local ColorPicker = {Value = ColorPickerConfig.Default, Save = ColorPickerConfig.Save, Type = "Colorpicker"}
+				
+				local ColorPickerFrame = AddThemeObject(SetChildren(SetProps(MakeElement("RoundFrame", Color3.fromRGB(255,255,255), 0, 5), {
+					Size = UDim2.new(1, 0, 0, 36),
+					Parent = ItemParent
+				}), {
+					AddThemeObject(SetProps(MakeElement("Label", ColorPickerConfig.Name, 15), {
+						Size = UDim2.new(1, -60, 1, 0),
+						Position = UDim2.new(0, 12, 0, 0),
+						Font = Enum.Font.GothamBold,
+						Name = "Title"
+					}), "Text"),
+					AddThemeObject(MakeElement("Stroke"), "Stroke"),
+					SetChildren(SetProps(MakeElement("Frame", {
+						BackgroundColor3 = ColorPickerConfig.Default,
+						Size = UDim2.new(0, 40, 0, 22),
+						Position = UDim2.new(1, -52, 0, 7)
+					}), {
+						MakeElement("Corner", 0, 4),
+						MakeElement("Stroke", Color3.fromRGB(60,60,60), 1)
+					}))
+				}), "Second")
+
+				local ColorButton = ColorPickerFrame:FindFirstChildWhichIsA("Frame")
+				
+				ColorButton.MouseButton1Click:Connect(function()
+					-- Simple color picker popup
+					local ColorPopup = Instance.new("ScreenGui")
+					local ColorFrame = Instance.new("Frame")
+					local RSlider = Instance.new("Frame")
+					-- ... (tạo giao diện color picker đơn giản)
+					-- Do phức tạp, tạm thời để đơn giản
+					ColorPicker:Set(Color3.new(math.random(), math.random(), math.random()))
+				end)
+
+				function ColorPicker:Set(Color)
+					ColorPicker.Value = Color
+					ColorButton.BackgroundColor3 = Color
+					ColorPickerConfig.Callback(Color)
+				end
+
+				if ColorPickerConfig.Flag then
+					NalLib.Flags[ColorPickerConfig.Flag] = ColorPicker
+				end
+
+				return ColorPicker
+			end
+
+			function ElementFunction:AddParagraph(ParagraphConfig)
+				ParagraphConfig = ParagraphConfig or {}
+				ParagraphConfig.Title = ParagraphConfig.Title or "Title"
+				ParagraphConfig.Content = ParagraphConfig.Content or "Content"
+
+				local ParagraphFrame = AddThemeObject(SetChildren(SetProps(MakeElement("RoundFrame", Color3.fromRGB(255,255,255), 0, 5), {
+					Size = UDim2.new(1, 0, 0, 0),
+					Parent = ItemParent,
+					AutomaticSize = Enum.AutomaticSize.Y
+				}), {
+					AddThemeObject(MakeElement("Stroke"), "Stroke"),
+					MakeElement("Padding", 12, 12, 12, 12),
+					SetProps(MakeElement("Label", ParagraphConfig.Title, 16), {
+						Size = UDim2.new(1, 0, 0, 20),
+						Position = UDim2.new(0, 0, 0, 0),
+						Font = Enum.Font.GothamBold,
+						Name = "Title"
+					}),
+					SetProps(MakeElement("Label", ParagraphConfig.Content, 14), {
+						Size = UDim2.new(1, 0, 0, 0),
+						Position = UDim2.new(0, 0, 0, 25),
+						Font = Enum.Font.Gotham,
+						TextWrapped = true,
+						AutomaticSize = Enum.AutomaticSize.Y,
+						TextColor3 = Color3.fromRGB(200,200,200),
+						Name = "Content"
+					})
+				}), "Second")
 			end
 
 			return ElementFunction
